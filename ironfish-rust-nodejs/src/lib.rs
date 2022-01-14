@@ -5,6 +5,7 @@
 use neon::prelude::*;
 
 use ironfish_rust::sapling_bls12;
+use ironfish_rust::mining;
 
 pub mod structs;
 
@@ -30,6 +31,23 @@ impl Key {
 
         let public_address = cx.string(&self.public_address);
         obj.set(cx, "public_address", public_address)?;
+
+        Ok(obj)
+    }
+}
+struct BlockHeaderData {
+    randomness: f64,
+    found_match: bool,
+}
+impl BlockHeaderData {
+    fn to_object<'a>(&self, cx: &mut impl Context<'a>) -> JsResult<'a, JsObject> {
+        let obj = cx.empty_object();
+
+        let randomness = cx.number(self.randomness);
+        obj.set(cx, "randomness", randomness)?;
+
+        let found_match = cx.boolean(self.found_match);
+        obj.set(cx, "found_match", found_match)?;
 
         Ok(obj)
     }
@@ -63,6 +81,42 @@ fn generate_new_public_address(mut cx: FunctionContext) -> JsResult<JsObject> {
     };
 
     key.to_object(&mut cx)
+}
+
+fn mine_block_header(mut cx: FunctionContext) -> JsResult<JsObject> {
+    // Data set up
+    let initial_randomness = cx.argument::<JsNumber>(0)?.value(&mut cx) as i64;
+    let header_buffer = cx.argument::<JsBuffer>(1)?;
+    let header_bytes = cx.borrow(&header_buffer, |data| {
+        data.as_mut_slice::<u8>()
+    });
+
+    let target_buffer = cx.argument::<JsBuffer>(2)?;
+    let target_bytes = cx.borrow(&target_buffer, |data| {
+        data.as_mut_slice::<u8>()
+    });
+    let big_target = mining::BigUint::from_bytes_be(target_bytes);
+
+    // Calculations
+    let mut block_data = BlockHeaderData {
+        randomness: 0.0,
+        found_match: false,
+    };
+
+    for n in 0..10_000 {
+        let randomness = mining::randomize_header(initial_randomness, n, header_bytes);
+        let hash = mining::blake3(header_bytes);
+
+        let big_hash = mining::BigUint::from_bytes_be(hash.as_bytes());
+        if big_hash <= big_target {
+            block_data.randomness = randomness as f64;
+            block_data.found_match = true;
+            break;
+        }
+    }
+
+    // Return data
+    block_data.to_object(&mut cx)
 }
 
 #[neon::main]
@@ -177,6 +231,10 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     cx.export_function(
         "transactionExpirationSequence",
         structs::NativeTransactionPosted::expiration_sequence,
+    )?;
+    cx.export_function(
+        "mineBlockHeader",
+        mine_block_header,
     )?;
 
     Ok(())

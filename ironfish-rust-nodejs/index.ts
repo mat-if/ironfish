@@ -12,6 +12,11 @@ export interface Key {
   readonly spending_key: string;
 }
 
+export interface BlockHashData {
+  readonly randomness: number,
+  readonly found_match: boolean,
+}
+
 interface IWitnessNode {
   side(): 'Left' | 'Right';
   hashOfSibling(): Uint8Array;
@@ -245,3 +250,5 @@ export class TransactionPosted {
 
 export const generateKey: () => Key = native.generateKey
 export const generateNewPublicAddress: (privateKey: string) => Key = native.generateNewPublicAddress
+
+export const mineBlockHeader: (initialRandomness: number, headerBytes: Buffer, target: Buffer) => BlockHashData = native.mineBlockHeader

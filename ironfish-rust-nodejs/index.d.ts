@@ -6,6 +6,10 @@ export interface Key {
     readonly public_address: string;
     readonly spending_key: string;
 }
+export interface BlockHashData {
+    readonly randomness: number;
+    readonly found_match: boolean;
+}
 interface IWitnessNode {
     side(): 'Left' | 'Right';
     hashOfSibling(): Uint8Array;
@@ -84,5 +88,6 @@ export declare class TransactionPosted {
 }
 export declare const generateKey: () => Key;
 export declare const generateNewPublicAddress: (privateKey: string) => Key;
+export declare const mineBlockHeader: (initialRandomness: number, headerBytes: Buffer, target: Buffer) => BlockHashData;
 export {};
 //# sourceMappingURL=index.d.ts.map

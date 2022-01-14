@@ -21,7 +21,7 @@ export type MineHeaderResponse = {
   randomness?: number
 }
 
-export function handleMineHeader(
+export async function handleMineHeader(
   {
     batchSize,
     headerBytesWithoutRandomness,
@@ -30,8 +30,8 @@ export function handleMineHeader(
     targetValue,
   }: MineHeaderRequest,
   job: Job,
-): MineHeaderResponse {
-  const result = mineHeader({
+): Promise<MineHeaderResponse> {
+  const result = await mineHeader({
     batchSize,
     headerBytesWithoutRandomness,
     initialRandomness,
