@@ -10,6 +10,7 @@
     "config/eslint-config-ironfish-react",
     "config/eslint-config-ironfish",
     "ironfish",
+    "ironfish-mining",
     "ironfish-rust-nodejs",
     "ironfish-rust-wasm/nodejs",
     "ironfish-rust-wasm/web"

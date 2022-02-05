@@ -79,3 +79,45 @@ pub fn mine_header_batch(
         found_match: mine_header_result.found_match,
     }
 }
+
+#[napi(constructor)]
+pub struct FoundBlockResult {
+    pub randomness: f64,
+    pub mining_request_id: f64,
+}
+
+#[napi]
+struct ThreadPoolHandler {
+    threadpool: mining::threadpool::ThreadPool,
+}
+#[napi]
+impl ThreadPoolHandler {
+    #[napi(constructor)]
+    pub fn new(thread_count: i32) -> Self {
+        ThreadPoolHandler {
+            threadpool: mining::threadpool::ThreadPool::new(thread_count),
+        }
+    }
+
+    #[napi]
+    pub fn new_work(&mut self, header_bytes: Buffer, target: Buffer, mining_request_id: u32) {
+        self.threadpool
+            .new_work(&header_bytes, &target, mining_request_id)
+    }
+
+    #[napi]
+    pub fn stop(&self) {
+        self.threadpool.stop()
+    }
+
+    #[napi]
+    pub fn get_found_block(&self) -> Option<FoundBlockResult> {
+        if let Some(result) = self.threadpool.get_found_block() {
+            return Some(FoundBlockResult {
+                randomness: result.0 as f64,
+                mining_request_id: result.1 as f64,
+            });
+        }
+        return None;
+    }
+}

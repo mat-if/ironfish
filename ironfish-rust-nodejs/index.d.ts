@@ -117,3 +117,14 @@ export class SimpleTransaction {
   receive(note: Note): string
   post(): TransactionPosted
 }
+export class FoundBlockResult {
+  randomness: number
+  miningRequestId: number
+  constructor(randomness: number, miningRequestId: number)
+}
+export class ThreadPoolHandler {
+  constructor(threadCount: number)
+  newWork(headerBytes: Buffer, target: Buffer, miningRequestId: number): void
+  stop(): void
+  getFoundBlock(): FoundBlockResult | undefined | null
+}

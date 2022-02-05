@@ -1,0 +1,13 @@
+{
+  "name": "ironfish-mining",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "ISC",
+  "scripts": {
+    "start": "tsc --build && node build/src/index.js"
+  },
+  "dependencies": {
+    "ironfish": "*",
+    "ironfish-rust-nodejs": "*"
+  }
+}
