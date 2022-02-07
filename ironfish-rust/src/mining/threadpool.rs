@@ -4,7 +4,7 @@ use super::thread::Thread;
 
 pub struct ThreadPool {
     threads: Vec<Thread>,
-    block_found_receiver: Receiver<usize>,
+    block_found_receiver: Receiver<(usize, u32)>,
     mining_request_id: u32,
 }
 impl ThreadPool {
@@ -16,8 +16,10 @@ impl ThreadPool {
             _ => thread_count as usize,
         };
 
-        let (block_found_channel, block_found_receiver): (Sender<usize>, Receiver<usize>) =
-            mpsc::channel();
+        let (block_found_channel, block_found_receiver): (
+            Sender<(usize, u32)>,
+            Receiver<(usize, u32)>,
+        ) = mpsc::channel();
 
         let mut threads = Vec::with_capacity(count);
         for id in 0..count {
@@ -32,11 +34,12 @@ impl ThreadPool {
     }
 
     pub fn new_work(&mut self, header_bytes: &[u8], target: &[u8], mining_request_id: u32) {
+        // println!("New work coming in: {:?}", mining_request_id);
         self.mining_request_id = mining_request_id;
 
         for thread in self.threads.iter() {
             thread
-                .new_work(header_bytes.to_vec(), target.to_vec())
+                .new_work(header_bytes.to_vec(), target.to_vec(), mining_request_id)
                 .unwrap();
         }
     }
@@ -48,8 +51,12 @@ impl ThreadPool {
     }
 
     pub fn get_found_block(&self) -> Option<(usize, usize)> {
-        if let Ok(block) = self.block_found_receiver.try_recv() {
-            return Some((block, self.mining_request_id as usize));
+        if let Ok((randomness, mining_request_id)) = self.block_found_receiver.try_recv() {
+            // Stale work
+            if mining_request_id != self.mining_request_id {
+                return None;
+            }
+            return Some((randomness, mining_request_id as usize));
         }
         return None;
     }

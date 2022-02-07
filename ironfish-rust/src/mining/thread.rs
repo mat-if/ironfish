@@ -8,7 +8,7 @@ use super::mine::{self, BATCH_SIZE};
 
 pub(crate) enum Command {
     // TODO Provide a proper struct instead of a tuple?
-    NewWork(Vec<u8>, Vec<u8>),
+    NewWork(Vec<u8>, Vec<u8>, u32),
     Stop,
 }
 
@@ -17,7 +17,11 @@ pub(crate) struct Thread {
     id: usize,
 }
 impl Thread {
-    pub(crate) fn new(id: usize, block_found_channel: Sender<usize>, pool_size: usize) -> Self {
+    pub(crate) fn new(
+        id: usize,
+        block_found_channel: Sender<(usize, u32)>,
+        pool_size: usize,
+    ) -> Self {
         let (work_sender, work_receiver): (Sender<Command>, Receiver<Command>) = mpsc::channel();
 
         thread::Builder::new()
@@ -36,9 +40,10 @@ impl Thread {
         &self,
         header_bytes: Vec<u8>,
         target: Vec<u8>,
+        mining_request_id: u32,
     ) -> Result<(), SendError<Command>> {
         self.command_channel
-            .send(Command::NewWork(header_bytes, target))
+            .send(Command::NewWork(header_bytes, target, mining_request_id))
     }
 
     pub(crate) fn stop(&self) -> Result<(), SendError<Command>> {
@@ -48,7 +53,7 @@ impl Thread {
 
 fn process_commands(
     work_receiver: Receiver<Command>,
-    block_found_channel: Sender<usize>,
+    block_found_channel: Sender<(usize, u32)>,
     start: usize,
     step_size: usize,
 ) {
@@ -56,21 +61,22 @@ fn process_commands(
     let mut command: Command = work_receiver.recv().unwrap();
     loop {
         match command {
-            Command::NewWork(mut header_bytes, target) => {
-                println!("New work received!");
+            Command::NewWork(mut header_bytes, target, mining_request_id) => {
+                // println!("New work received!");
                 let mut batch_start = start;
                 loop {
-                    // New command received, stop working so we can process it
+                    let match_found =
+                        mine::mine_batch(&mut header_bytes, &target, batch_start, step_size);
+
+                    // New command received, this work is now stale, stop working so we can start on new work
                     if let Ok(cmd) = work_receiver.try_recv() {
                         command = cmd;
                         break;
                     }
 
-                    let match_found =
-                        mine::mine_batch(&mut header_bytes, &target, batch_start, step_size);
                     if let Some(randomness) = match_found {
-                        println!("Found a match in thread.rs. {:?}", randomness);
-                        if let Err(e) = block_found_channel.send(randomness) {
+                        // println!("Found a match in thread.rs. {:?}", randomness);
+                        if let Err(e) = block_found_channel.send((randomness, mining_request_id)) {
                             panic!("Error sending found block: {:?}", e);
                         }
 
