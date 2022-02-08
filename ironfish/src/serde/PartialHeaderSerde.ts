@@ -27,16 +27,27 @@ export default class PartialBlockHeaderSerde implements Serde<PartialBlockHeader
 
   deserialize(data: Buffer): PartialBlockHeader {
     const br = bufio.read(data)
+    console.log('yup', br)
     const sequence = br.readU64()
+    console.log('sequence', sequence)
     const previousBlockHash = br.readHash()
+    console.log('prev block hash', previousBlockHash)
     const noteCommitment = br.readHash()
+    console.log('note commitment', noteCommitment)
     const noteCommitmentSize = br.readU64()
+    console.log('note commitment size', noteCommitmentSize)
     const nullifierCommitment = br.readHash()
+    console.log('nullifier commitment', nullifierCommitment)
     const nullifierCommitmentSize = br.readU64()
+    console.log('nullifier commitment size', nullifierCommitmentSize)
     const target = br.readBytes(32)
+    console.log('target', target)
     const timestamp = br.readU64()
+    console.log('timestamp', timestamp)
     const minersFee = br.readBytes(8)
+    console.log('minersFee', minersFee)
     const graffiti = br.readBytes(32)
+    console.log('graffiti', graffiti)
 
     return {
       sequence: sequence,

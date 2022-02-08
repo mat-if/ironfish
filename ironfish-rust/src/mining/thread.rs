@@ -19,14 +19,23 @@ pub(crate) struct Thread {
 impl Thread {
     pub(crate) fn new(
         id: usize,
-        block_found_channel: Sender<(usize, u32)>,
+        block_found_channel: Sender<(usize, u32, Vec<u8>)>,
+        hash_rate_channel: Sender<u32>,
         pool_size: usize,
     ) -> Self {
         let (work_sender, work_receiver): (Sender<Command>, Receiver<Command>) = mpsc::channel();
 
         thread::Builder::new()
             .name(id.to_string())
-            .spawn(move || process_commands(work_receiver, block_found_channel, id, pool_size))
+            .spawn(move || {
+                process_commands(
+                    work_receiver,
+                    block_found_channel,
+                    hash_rate_channel,
+                    id,
+                    pool_size,
+                )
+            })
             .unwrap();
 
         Thread {
@@ -53,7 +62,8 @@ impl Thread {
 
 fn process_commands(
     work_receiver: Receiver<Command>,
-    block_found_channel: Sender<(usize, u32)>,
+    block_found_channel: Sender<(usize, u32, Vec<u8>)>,
+    hash_rate_channel: Sender<u32>,
     start: usize,
     step_size: usize,
 ) {
@@ -68,6 +78,13 @@ fn process_commands(
                     let match_found =
                         mine::mine_batch(&mut header_bytes, &target, batch_start, step_size);
 
+                    // Submit amount of work done
+                    let work_done = match match_found {
+                        Some(randomness) => randomness - batch_start,
+                        None => BATCH_SIZE,
+                    };
+                    hash_rate_channel.send(work_done as u32).unwrap();
+
                     // New command received, this work is now stale, stop working so we can start on new work
                     if let Ok(cmd) = work_receiver.try_recv() {
                         command = cmd;
@@ -76,7 +93,11 @@ fn process_commands(
 
                     if let Some(randomness) = match_found {
                         // println!("Found a match in thread.rs. {:?}", randomness);
-                        if let Err(e) = block_found_channel.send((randomness, mining_request_id)) {
+                        if let Err(e) = block_found_channel.send((
+                            randomness,
+                            mining_request_id,
+                            header_bytes.clone(),
+                        )) {
                             panic!("Error sending found block: {:?}", e);
                         }
 

@@ -120,11 +120,13 @@ export class SimpleTransaction {
 export class FoundBlockResult {
   randomness: number
   miningRequestId: number
-  constructor(randomness: number, miningRequestId: number)
+  blockHash: string
+  constructor(randomness: number, miningRequestId: number, blockHash: string)
 }
 export class ThreadPoolHandler {
   constructor(threadCount: number)
   newWork(headerBytes: Buffer, target: Buffer, miningRequestId: number): void
   stop(): void
   getFoundBlock(): FoundBlockResult | undefined | null
+  getHashRateSubmission(): number
 }

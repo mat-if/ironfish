@@ -31,7 +31,7 @@ pub(crate) fn mine_batch(
         let hash = blake3::hash(&header_bytes);
 
         if bytes_lte(hash.as_bytes(), target) {
-            return Some(i);
+            return Some((i));
         }
     }
     return None;

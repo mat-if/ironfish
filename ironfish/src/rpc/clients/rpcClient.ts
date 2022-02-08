@@ -40,6 +40,8 @@ import {
   ShowChainRequest,
   ShowChainResponse,
   StopNodeResponse,
+  SubmitWorkRequest,
+  SubmitWorkResponse,
   SuccessfullyMinedRequest,
   SuccessfullyMinedResponse,
   UploadConfigRequest,
@@ -231,6 +233,10 @@ export abstract class IronfishRpcClient {
 
   successfullyMined(params: SuccessfullyMinedRequest): Response<SuccessfullyMinedResponse> {
     return this.request<SuccessfullyMinedResponse>('miner/successfullyMined', params)
+  }
+
+  submitWork(params: SubmitWorkRequest): Response<SubmitWorkRequest> {
+    return this.request<SubmitWorkRequest>('miner/submitWork', params)
   }
 
   async getFunds(params: GetFundsRequest): Promise<ResponseEnded<GetFundsResponse>> {

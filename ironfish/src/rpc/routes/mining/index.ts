@@ -5,3 +5,4 @@
 export * from './exportMined'
 export * from './newBlocksStream'
 export * from './successfullyMined'
+export * from './submitWork'
