@@ -43,9 +43,8 @@ impl ThreadPool {
     }
 
     pub fn new_work(&mut self, header_bytes: &[u8], target: &[u8], mining_request_id: u32) {
-        // println!("New work coming in: {:?}", mining_request_id);
+        self.mining_request_id = mining_request_id;
 
-        println!(" NEW WORK {:?}", header_bytes);
         for thread in self.threads.iter() {
             thread
                 .new_work(header_bytes.to_vec(), target.to_vec(), mining_request_id)
@@ -67,8 +66,6 @@ impl ThreadPool {
             if mining_request_id != self.mining_request_id {
                 return None;
             }
-            println!("BYTES {:?}", block_hash);
-            println!("SUBMITTING IWTH: {:?}", hex::encode(&block_hash));
             return Some((
                 randomness,
                 mining_request_id as usize,

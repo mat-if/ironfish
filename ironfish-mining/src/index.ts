@@ -1,6 +1,6 @@
 import bufio from 'bufio'
 import { ThreadPoolHandler } from 'ironfish-rust-nodejs'
-import { BigIntUtils, IronfishRpcClient, IronfishSdk, Meter, NewBlocksStreamResponse, SuccessfullyMinedRequest } from 'ironfish'
+import { IronfishRpcClient, IronfishSdk, Meter, SerializedBlockTemplate, } from 'ironfish'
 
 export class Miner {
     readonly sdk: IronfishSdk
@@ -9,6 +9,9 @@ export class Miner {
     readonly threadPool: ThreadPoolHandler
 
     miningRequestId: number
+
+    // TODO: LRU
+    miningRequestPayloads: {[index: number]: SerializedBlockTemplate} = {}
 
     private constructor(sdk: IronfishSdk, nodeClient: IronfishRpcClient, threadPool: ThreadPoolHandler) {
         this.sdk = sdk
@@ -29,7 +32,7 @@ export class Miner {
         }
 
         // TODO: Confirm that this can't be set via config or anything
-        const threadCount = 2
+        const threadCount = 1
 
         const sdk = await IronfishSdk.init({ configOverrides: configOverrides,
         })
@@ -52,11 +55,14 @@ export class Miner {
             // TODO: Turn this into an AsyncGenerator type thing on the JS side?
             let blockResult = this.threadPool.getFoundBlock()
             if (blockResult != null) {
-                // let { miningRequestId, randomness, blockHash, fii} = blockResult
                 let { miningRequestId, randomness, blockHash} = blockResult
                 this.sdk.logger.log("Found block:", randomness, miningRequestId, blockHash)
-                // let resp = await this.nodeClient.successfullyMined({ miningRequestId, randomness })
-                let resp = await this.nodeClient.submitWork({ data: blockHash })
+                let partialHeader = minedPartialHeader(Buffer.from(blockHash, 'hex'))
+                let block = {
+                    header: partialHeader,
+                    transactions: this.miningRequestPayloads[miningRequestId].transactions,
+                }
+                let resp = await this.nodeClient.submitWork(block)
                 // console.log('submitted block', resp)
             }
 
@@ -73,23 +79,18 @@ export class Miner {
         for await (const payload of this.nodeClient.blockTemplateStream().contentStream()) {
             let headerBytes = mineableHeaderString(payload.header)
             let target = Buffer.from(payload.header.target, 'hex')
-            // const headerBytes = Buffer.alloc(payload.bytes.data.length + 8)
-            // headerBytes.set(payload.bytes.data, 8)
             // // TODO: Send as buffer? hex? same goes for headerbytes
             // let target = BigIntUtils.toBytesBE(BigInt(payload.target), 32)
             // let miningRequestId = payload.miningRequestId
 
             let miningRequestId = this.miningRequestId++
+            this.miningRequestPayloads[miningRequestId] = payload
             this.threadPool.newWork(headerBytes, target, miningRequestId)
         }
     }
 }
 
 async function init() {
-    let x = 123
-    let y = BigIntUtils.toBytesBE(BigInt(1), 8).toString('hex')
-    console.log('bytelength', Buffer.byteLength(y))
-
     let miner = await Miner.init()
     miner.mine()
 }
@@ -118,6 +119,7 @@ interface PartialHeader {
     graffiti: string
 }
 
+// "serialize" into a binary format
 function mineableHeaderString(header: PartialHeader): Buffer {
     const bw = bufio.write(208)
     bw.writeDoubleBE(header.randomness)
@@ -134,6 +136,7 @@ function mineableHeaderString(header: PartialHeader): Buffer {
     return bw.render()
 }
 
+// deserialize into a partial header
 function minedPartialHeader(data: Buffer): PartialHeader {
     const br = bufio.read(data)
     const randomness = br.readDoubleBE()

@@ -105,7 +105,6 @@ export class IronfishIpcClient extends IronfishRpcClient {
         }
 
         const onError = (error: unknown) => {
-          console.log('!!!!!!!!', error)
           if (client.retriesRemaining > 0 && !client.config.stopRetrying) {
             return
           }
@@ -131,9 +130,7 @@ export class IronfishIpcClient extends IronfishRpcClient {
         this.logger.debug(`Connecting to ${String(connection.socketPath)}`)
         ipc.connectTo('server', connection.socketPath, onConnectTo)
       } else if (connection.mode === 'tcp') {
-        console.log('TCP???')
         this.logger.debug(`Connecting to ${String(connection.host)}:${String(connection.port)}`)
-        console.log(`Connecting to ${String(connection.host)}:${String(connection.port)}`)
         ipc.connectToNet('server', connection.host, connection.port, onConnectTo)
       }
     })

@@ -4,7 +4,16 @@
 
 import { BufferSet } from 'buffer-map'
 import * as yup from 'yup'
-import { Assert, AsyncUtils, BigIntUtils, Block, GraffitiUtils, Transaction } from '../../..'
+import {
+  Assert,
+  AsyncUtils,
+  BigIntUtils,
+  Block,
+  BlockHeader,
+  GraffitiUtils,
+  Strategy,
+  Transaction,
+} from '../../..'
 import { Target } from '../../../primitives/target'
 import { ValidationError } from '../../adapters'
 import { ApiNamespace, router } from '../router'
@@ -25,7 +34,6 @@ export type SerializedBlockTemplate = {
     // TODO: Skip sending this? or easier this way?
     randomness: number
     timestamp: number
-    // TODO: do we want to keep this as a string? big int > buffer > hex?
     minersFee: string
     graffiti: string
   }
@@ -55,6 +63,39 @@ function serializeBlockTemplate(block: Block): SerializedBlockTemplate {
     header,
     transactions,
   }
+}
+
+export function deserializeBlockTemplate(
+  strategy: Strategy,
+  blockTemplate: SerializedBlockTemplate,
+): Block {
+  const header = new BlockHeader(
+    strategy,
+    blockTemplate.header.sequence,
+    Buffer.from(blockTemplate.header.previousBlockHash, 'hex'),
+    {
+      commitment: strategy.noteHasher
+        .hashSerde()
+        .deserialize(Buffer.from(blockTemplate.header.noteCommitment.commitment, 'hex')),
+      size: blockTemplate.header.noteCommitment.size,
+    },
+    {
+      commitment: strategy.noteHasher
+        .hashSerde()
+        .deserialize(Buffer.from(blockTemplate.header.nullifierCommitment.commitment, 'hex')),
+      size: blockTemplate.header.nullifierCommitment.size,
+    },
+    new Target(Buffer.from(blockTemplate.header.target, 'hex')),
+    blockTemplate.header.randomness,
+    new Date(blockTemplate.header.timestamp),
+    BigInt(-1) * BigIntUtils.fromBytes(Buffer.from(blockTemplate.header.minersFee, 'hex')),
+    Buffer.from(blockTemplate.header.graffiti, 'hex'),
+  )
+  const transactions = blockTemplate.transactions.map((t) =>
+    strategy.transactionSerde.deserialize(Buffer.from(t, 'hex')),
+  )
+
+  return new Block(header, transactions)
 }
 
 export const serializedBlockTemplateSchema = yup
@@ -108,8 +149,6 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
   BlockTemplateStreamRequestSchema,
   async (request, node): Promise<void> => {
     const onConnectBlock = async (block: Block) => {
-      console.log('NEW BLOCK, NEAT')
-
       // TODO: find a good place to put this, not really mining specific
       // TODO: or find other places that do similar and see if there's code duplication
       // mempool maybe?
@@ -122,7 +161,6 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
           block.header.sequence + 1,
         )
 
-        console.log('expired?')
         if (isExpired) {
           continue
         }
@@ -131,13 +169,11 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
           return nullifiers.has(spend.nullifier)
         })
 
-        console.log('conflicted?')
         if (conflicted) {
           continue
         }
 
         const { valid } = await node.chain.verifier.verifyTransactionSpends(transaction)
-        console.log('valid?')
         if (!valid) {
           continue
         }
@@ -155,12 +191,10 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
       for (const transactionFee of transactionFees) {
         totalTransactionFees += transactionFee
       }
-      console.log('tx fees', totalTransactionFees)
 
       const newSequence = block.header.sequence + 1
 
       const account = node.accounts.getDefaultAccount()
-      console.log('account', account != null)
       if (account == null) {
         return
       }
@@ -174,18 +208,14 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
         newSequence,
         account.spendingKey,
       )
-      console.log('miners fee', minersFee != null)
 
       const newBlock = await node.chain.newBlock(
         blockTransactions,
         minersFee,
         GraffitiUtils.fromString(node.config.get('blockGraffiti')),
       )
-      console.log('new block', newBlock != null)
 
-      // const serializedBlock = node.strategy.blockSerde.serialize(newBlock)
-      const serializedBlock = serializeBlockTemplate(block)
-      // console.log('serialized block', serializedBlock)
+      const serializedBlock = serializeBlockTemplate(newBlock)
       request.stream(serializedBlock)
     }
 
@@ -195,10 +225,10 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
       })
     }
 
-    console.log('asdfasdfadf')
     // TODO: we'll still want equivalent of director.force flag
     if (!node.chain.synced) {
       // TODO: Inform the requester with an error
+      console.log('we arent synced')
       return
     }
 
@@ -210,12 +240,13 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
     // node.chain.onConnectBlock.on(onConnectBlock)
     node.chain.onConnectBlock.on(wrappedFn)
     const block = await node.chain.getBlock(node.chain.head)
+    // send an initial block to the requester so they can start working
+    // immediately instead of waiting for a new block
     if (block != null) {
       await onConnectBlock(block)
     }
 
     request.onClose.once(() => {
-      console.log('unhooking event listener')
       node.chain.onConnectBlock.off(onConnectBlock)
     })
   },

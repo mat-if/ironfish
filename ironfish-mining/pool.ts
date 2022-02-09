@@ -32,7 +32,6 @@ async function processNewBlocks(
     contentStream: AsyncGenerator<NewBlocksStreamResponse, void, unknown>
 ) {
     for await (const payload of contentStream) {
-        // console.log('block received')
         const headerBytes = Buffer.alloc(payload.bytes.data.length + 8)
         headerBytes.set(payload.bytes.data, 8)
         // TODO: Send as buffer? hex? same goes for headerbytes
