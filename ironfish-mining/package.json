@@ -8,6 +8,7 @@
     "start": "tsc --build && node build/src/index.js"
   },
   "dependencies": {
+    "bufio": "1.0.7",
     "ironfish": "*",
     "ironfish-rust-nodejs": "*"
   }

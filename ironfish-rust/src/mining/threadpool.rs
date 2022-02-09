@@ -44,7 +44,6 @@ impl ThreadPool {
 
     pub fn new_work(&mut self, header_bytes: &[u8], target: &[u8], mining_request_id: u32) {
         // println!("New work coming in: {:?}", mining_request_id);
-        self.mining_request_id = mining_request_id;
 
         println!(" NEW WORK {:?}", header_bytes);
         for thread in self.threads.iter() {

@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import bufio from 'bufio'
+import { number } from 'yup'
 import { NoteEncryptedHash } from '../primitives/noteEncrypted'
 import { NullifierHash } from '../primitives/nullifier'
 import { Target } from '../primitives/target'
@@ -11,6 +12,7 @@ import { Serde } from '.'
 
 export default class PartialBlockHeaderSerde implements Serde<PartialBlockHeader, Buffer> {
   serialize(header: PartialBlockHeader): Buffer {
+    // TODO: It would be great if this just included the 8 bytes for randomness to avoid extra allocations
     const bw = bufio.write(200)
     bw.writeU64(header.sequence)
     bw.writeHash(header.previousBlockHash)
@@ -27,27 +29,16 @@ export default class PartialBlockHeaderSerde implements Serde<PartialBlockHeader
 
   deserialize(data: Buffer): PartialBlockHeader {
     const br = bufio.read(data)
-    console.log('yup', br)
     const sequence = br.readU64()
-    console.log('sequence', sequence)
     const previousBlockHash = br.readHash()
-    console.log('prev block hash', previousBlockHash)
     const noteCommitment = br.readHash()
-    console.log('note commitment', noteCommitment)
     const noteCommitmentSize = br.readU64()
-    console.log('note commitment size', noteCommitmentSize)
     const nullifierCommitment = br.readHash()
-    console.log('nullifier commitment', nullifierCommitment)
     const nullifierCommitmentSize = br.readU64()
-    console.log('nullifier commitment size', nullifierCommitmentSize)
     const target = br.readBytes(32)
-    console.log('target', target)
     const timestamp = br.readU64()
-    console.log('timestamp', timestamp)
     const minersFee = br.readBytes(8)
-    console.log('minersFee', minersFee)
     const graffiti = br.readBytes(32)
-    console.log('graffiti', graffiti)
 
     return {
       sequence: sequence,

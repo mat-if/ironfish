@@ -301,4 +301,21 @@ export class BlockHeaderSerde implements Serde<BlockHeader, SerializedBlockHeade
 
     return header
   }
+
+  deserializeFromPartialHex(data: string): BlockHeader {
+    const partial = new PartialBlockHeaderSerde().deserialize(Buffer.from(data, 'hex'))
+    return new BlockHeader(
+      this.strategy,
+      partial.sequence,
+      partial.previousBlockHash,
+      partial.noteCommitment,
+      partial.nullifierCommitment,
+      partial.target,
+      0, // randomness
+      partial.timestamp,
+      partial.minersFee,
+      partial.graffiti,
+      BigInt(0),
+    )
+  }
 }

@@ -4,6 +4,8 @@
 import { Logger } from '../../logger'
 import { Response, ResponseEnded } from '../response'
 import {
+  BlockTemplateStreamRequest,
+  BlockTemplateStreamResponse,
   CreateAccountRequest,
   CreateAccountResponse,
   GetAccountsRequest,
@@ -229,6 +231,12 @@ export abstract class IronfishRpcClient {
     params: NewBlocksStreamRequest = undefined,
   ): Response<void, NewBlocksStreamResponse> {
     return this.request<void, NewBlocksStreamResponse>('miner/newBlocksStream', params)
+  }
+
+  blockTemplateStream(
+    params: BlockTemplateStreamRequest = undefined,
+  ): Response<void, BlockTemplateStreamResponse> {
+    return this.request<void, BlockTemplateStreamResponse>('miner/blockTemplateStream', params)
   }
 
   successfullyMined(params: SuccessfullyMinedRequest): Response<SuccessfullyMinedResponse> {
