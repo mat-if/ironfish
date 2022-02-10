@@ -103,7 +103,7 @@ fn process_commands(
                             }
 
                             // If "stop on match", break here
-                            break 'outer;
+                            // break 'outer;
                         }
 
                         batch_start += BATCH_SIZE;

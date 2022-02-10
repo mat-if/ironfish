@@ -5,9 +5,12 @@
   "license": "ISC",
   "scripts": {
     "build": "tsc --build",
-    "start": "tsc --build && node build/src/index.js"
+    "old": "tsc --build && node build/src/index.js",
+    "pool": "tsc --build && node build/src/pool.js",
+    "miner": "tsc --build && node build/src/miner-pool.js"
   },
   "dependencies": {
+    "@napi-rs/blake-hash": "1.3.1",
     "bufio": "1.0.7",
     "ironfish": "*",
     "ironfish-rust-nodejs": "*"

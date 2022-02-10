@@ -1,6 +1,6 @@
 import bufio from 'bufio'
 import { ThreadPoolHandler } from 'ironfish-rust-nodejs'
-import { IronfishRpcClient, IronfishSdk, Meter, SerializedBlockTemplate, } from 'ironfish'
+import { GraffitiUtils, IronfishRpcClient, IronfishSdk, Meter, SerializedBlockTemplate, } from 'ironfish'
 
 export class Miner {
     readonly sdk: IronfishSdk
@@ -34,8 +34,7 @@ export class Miner {
         // TODO: Confirm that this can't be set via config or anything
         const threadCount = 1
 
-        const sdk = await IronfishSdk.init({ configOverrides: configOverrides,
-        })
+        const sdk = await IronfishSdk.init({ configOverrides: configOverrides })
 
         const nodeClient = await sdk.connectRpc()
         const threadPool = new ThreadPoolHandler(threadCount)
@@ -77,6 +76,7 @@ export class Miner {
 
     private async processNewBlocks() {
         for await (const payload of this.nodeClient.blockTemplateStream().contentStream()) {
+            payload.header.graffiti = GraffitiUtils.fromString('thisisatest').toString('hex')
             let headerBytes = mineableHeaderString(payload.header)
             let target = Buffer.from(payload.header.target, 'hex')
             // // TODO: Send as buffer? hex? same goes for headerbytes
@@ -91,8 +91,25 @@ export class Miner {
 }
 
 async function init() {
-    let miner = await Miner.init()
-    miner.mine()
+    // console.log('orig miner init')
+    // let miner = await Miner.init()
+    // miner.mine()
+
+    let a = Buffer.alloc(32)
+    a.writeBigUInt64BE(BigInt(1))
+    let b = Buffer.alloc(32)
+    b.writeUInt32BE(256)
+    let c = Buffer.alloc(32)
+    c.writeUInt32BE(128)
+    let d = Buffer.alloc(32)
+    d.writeUInt32BE(65535)
+
+    console.log("A<B", a < b)
+    console.log("INV", a > b)
+    console.log("B>C", b > c)
+    console.log("INV", b < c)
+    console.log("B<D", b < d)
+    console.log("INV", b > d)
 }
 
 function sleep(ms: number) {
@@ -120,7 +137,7 @@ interface PartialHeader {
 }
 
 // "serialize" into a binary format
-function mineableHeaderString(header: PartialHeader): Buffer {
+export function mineableHeaderString(header: PartialHeader): Buffer {
     const bw = bufio.write(208)
     bw.writeDoubleBE(header.randomness)
     bw.writeU64(header.sequence)
@@ -131,13 +148,14 @@ function mineableHeaderString(header: PartialHeader): Buffer {
     bw.writeU64(header.nullifierCommitment.size)
     bw.writeHash(header.target)
     bw.writeU64(header.timestamp)
+    // TODO: I think this can just use a writeString fn
     bw.writeBytes(Buffer.from(header.minersFee, 'hex'))
     bw.writeBytes(Buffer.from(header.graffiti, 'hex'))
     return bw.render()
 }
 
 // deserialize into a partial header
-function minedPartialHeader(data: Buffer): PartialHeader {
+export function minedPartialHeader(data: Buffer): PartialHeader {
     const br = bufio.read(data)
     const randomness = br.readDoubleBE()
     const sequence = br.readU64()
@@ -170,4 +188,6 @@ function minedPartialHeader(data: Buffer): PartialHeader {
     }
 }
 
-init()
+if (require.main === module) {
+    init()
+}

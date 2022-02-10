@@ -1,16 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-import bufio from 'bufio'
 import * as yup from 'yup'
-import { BlockHeaderSerde } from '../../../primitives/blockheader'
-import PartialBlockHeaderSerde from '../../../serde/PartialHeaderSerde'
 import { ApiNamespace, router } from '../router'
-import {
-  deserializeBlockTemplate,
-  SerializedBlockTemplate,
-  serializedBlockTemplateSchema,
-} from '.'
+import { deserializeBlockTemplate, SerializedBlockTemplate } from '.'
 
 export enum MINED_RESULT {
   UNKNOWN_REQUEST = 'UNKNOWN_REQUEST',
