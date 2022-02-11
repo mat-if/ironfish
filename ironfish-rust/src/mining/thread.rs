@@ -1,7 +1,6 @@
 use std::{
     sync::mpsc::{self, Receiver, SendError, Sender},
     thread,
-    time::Duration,
 };
 
 use super::mine::{self, BATCH_SIZE};
@@ -15,7 +14,6 @@ pub(crate) enum Command {
 
 pub(crate) struct Thread {
     command_channel: Sender<Command>,
-    id: usize,
 }
 impl Thread {
     pub(crate) fn new(
@@ -41,7 +39,6 @@ impl Thread {
 
         Thread {
             command_channel: work_sender,
-            id,
         }
     }
 

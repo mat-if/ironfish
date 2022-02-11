@@ -15,7 +15,6 @@ import {
   Transaction,
 } from '../../..'
 import { Target } from '../../../primitives/target'
-import { ValidationError } from '../../adapters'
 import { ApiNamespace, router } from '../router'
 
 export type SerializedBlockTemplate = {
@@ -31,7 +30,6 @@ export type SerializedBlockTemplate = {
       size: number
     }
     target: string
-    // TODO: Skip sending this? or easier this way?
     randomness: number
     timestamp: number
     minersFee: string
@@ -232,12 +230,6 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
       return
     }
 
-    // node.chain.onConnectBlock.on((block) => {
-    //   setTimeout(() => {
-    //     onConnectBlock(block)
-    //   })
-    // })
-    // node.chain.onConnectBlock.on(onConnectBlock)
     node.chain.onConnectBlock.on(wrappedFn)
     const block = await node.chain.getBlock(node.chain.head)
     // send an initial block to the requester so they can start working
@@ -247,15 +239,7 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
     }
 
     request.onClose.once(() => {
-      node.chain.onConnectBlock.off(onConnectBlock)
+      node.chain.onConnectBlock.off(wrappedFn)
     })
   },
 )
-
-// Director flow
-// onChainHeadChange
-//  generateBlockToMine
-//    constructTransactionsAndFees DONE
-//      getTransactions DONE
-//    constructAndMineBlockWithRetry
-//      constructAndMineBlock

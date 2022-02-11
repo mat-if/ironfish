@@ -2,122 +2,9 @@ import bufio from 'bufio'
 import { ThreadPoolHandler } from 'ironfish-rust-nodejs'
 import { GraffitiUtils, IronfishRpcClient, IronfishSdk, Meter, SerializedBlockTemplate, } from 'ironfish'
 
-export class Miner {
-    readonly sdk: IronfishSdk
-    readonly nodeClient: IronfishRpcClient
-    readonly hashRate: Meter
-    readonly threadPool: ThreadPoolHandler
 
-    miningRequestId: number
-
-    // TODO: LRU
-    miningRequestPayloads: {[index: number]: SerializedBlockTemplate} = {}
-
-    private constructor(sdk: IronfishSdk, nodeClient: IronfishRpcClient, threadPool: ThreadPoolHandler) {
-        this.sdk = sdk
-        this.nodeClient = nodeClient
-        this.hashRate = new Meter()
-        this.threadPool = threadPool
-        this.miningRequestId = 0
-    }
-
-    static async init(): Promise<Miner> {
-        // TODO: Miner needs to be able to modify graffiti - we can't do this until new endpoints
-        // TODO: Hashrate
-        // TODO: Add IPC support for slightly improved speed
-        const configOverrides = {
-            enableRpcTcp: true,
-            rpcTcpHost: 'localhost',
-            rpcTcpPort: 8001
-        }
-
-        // TODO: Confirm that this can't be set via config or anything
-        const threadCount = 1
-
-        const sdk = await IronfishSdk.init({ configOverrides: configOverrides })
-
-        const nodeClient = await sdk.connectRpc()
-        const threadPool = new ThreadPoolHandler(threadCount)
-
-        return new Miner(
-            sdk,
-            nodeClient,
-            threadPool,
-        )
-    }
-
-    async mine() {
-        this.hashRate.start()
-        this.processNewBlocks()
-
-        while (true) {
-            // TODO: Turn this into an AsyncGenerator type thing on the JS side?
-            let blockResult = this.threadPool.getFoundBlock()
-            if (blockResult != null) {
-                let { miningRequestId, randomness, blockHash} = blockResult
-                this.sdk.logger.log("Found block:", randomness, miningRequestId, blockHash)
-                let partialHeader = minedPartialHeader(Buffer.from(blockHash, 'hex'))
-                let block = {
-                    header: partialHeader,
-                    transactions: this.miningRequestPayloads[miningRequestId].transactions,
-                }
-                let resp = await this.nodeClient.submitWork(block)
-                // console.log('submitted block', resp)
-            }
-
-            let hashRate = this.threadPool.getHashRateSubmission()
-            this.hashRate.add(hashRate)
-
-            await sleep(10)
-        }
-
-        this.hashRate.stop()
-    }
-
-    private async processNewBlocks() {
-        for await (const payload of this.nodeClient.blockTemplateStream().contentStream()) {
-            payload.header.graffiti = GraffitiUtils.fromString('thisisatest').toString('hex')
-            let headerBytes = mineableHeaderString(payload.header)
-            let target = Buffer.from(payload.header.target, 'hex')
-            // // TODO: Send as buffer? hex? same goes for headerbytes
-            // let target = BigIntUtils.toBytesBE(BigInt(payload.target), 32)
-            // let miningRequestId = payload.miningRequestId
-
-            let miningRequestId = this.miningRequestId++
-            this.miningRequestPayloads[miningRequestId] = payload
-            this.threadPool.newWork(headerBytes, target, miningRequestId)
-        }
-    }
-}
-
-async function init() {
-    // console.log('orig miner init')
-    // let miner = await Miner.init()
-    // miner.mine()
-
-    let a = Buffer.alloc(32)
-    a.writeBigUInt64BE(BigInt(1))
-    let b = Buffer.alloc(32)
-    b.writeUInt32BE(256)
-    let c = Buffer.alloc(32)
-    c.writeUInt32BE(128)
-    let d = Buffer.alloc(32)
-    d.writeUInt32BE(65535)
-
-    console.log("A<B", a < b)
-    console.log("INV", a > b)
-    console.log("B>C", b > c)
-    console.log("INV", b < c)
-    console.log("B<D", b < d)
-    console.log("INV", b > d)
-}
-
-function sleep(ms: number) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms)
-    })
-}
-
+// TODO: Replace all of this with PartialHeaderSerde from SDK
+// TODO: Refactor PartialHeaderSerde to have a 3rd-party friendlier API. hex instead of buffer, etc.
 interface PartialHeader {
     randomness: number
     sequence: number
@@ -186,8 +73,4 @@ export function minedPartialHeader(data: Buffer): PartialHeader {
         size: nullifierCommitmentSize,
       },
     }
-}
-
-if (require.main === module) {
-    init()
 }

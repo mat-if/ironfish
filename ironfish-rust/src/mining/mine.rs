@@ -1,7 +1,9 @@
 use byteorder::{BigEndian, WriteBytesExt};
 
+// TODO: allow this to be configured
 pub(crate) const BATCH_SIZE: usize = 10_000;
 
+// TODO: dedupe these fns
 fn bytes_lte(a: &[u8], b: &[u8]) -> bool {
     for i in 0..32 {
         if a[i] < b[i] {

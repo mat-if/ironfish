@@ -2,7 +2,6 @@ import { blake3 } from '@napi-rs/blake-hash'
 import net from 'net'
 import { BigIntUtils, IronfishRpcClient, IronfishSdk, Meter, SerializedBlockTemplate } from 'ironfish'
 import { mineableHeaderString } from './index'
-import { WebSocketServer } from 'ironfish/src/network/webSocketServer'
 
 export class Pool {
     readonly sdk: IronfishSdk
@@ -32,9 +31,8 @@ export class Pool {
     }
 
     static async init(): Promise<Pool> {
-        // TODO: Miner needs to be able to modify graffiti - we can't do this until new endpoints
         // TODO: Hashrate
-        // TODO: Add IPC support for slightly improved speed
+        // TODO: Add IPC support for slightly improved speed?
         const configOverrides = {
             enableRpcTcp: true,
             rpcTcpHost: 'localhost',
@@ -89,12 +87,6 @@ export class Pool {
 
     private async processNewBlocks() {
         for await (const payload of this.nodeClient.blockTemplateStream().contentStream()) {
-            // payload.header.graffiti = GraffitiUtils.fromString('thisisatest').toString('hex')
-            // let headerBytes = mineableHeaderString(payload.header)
-            // // TODO: Send as buffer? hex? same goes for headerbytes
-            // let target = BigIntUtils.toBytesBE(BigInt(payload.target), 32)
-            // let miningRequestId = payload.miningRequestId
-
             let miningRequestId = this.nextMiningRequestId++
             this.miningRequestBlocks[miningRequestId] = payload
 
@@ -157,10 +149,6 @@ class StratumServer {
                                 break
                             case 'mining.submit':
                                 console.log('mining.submit request received')
-                                // payload expectation
-                                // mining request id / job id
-                                // graffiti
-                                // randomness
                                 let submittedRequestId = payload.params[0]
                                 let submittedRandomness = payload.params[1]
                                 let submittedGraffiti = payload.params[2]
