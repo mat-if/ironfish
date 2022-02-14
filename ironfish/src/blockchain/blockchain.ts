@@ -907,7 +907,6 @@ export class Blockchain {
       graffiti = graffiti ? graffiti : Buffer.alloc(32)
 
       const header = new BlockHeader(
-        this.strategy,
         previousSequence + 1,
         previousBlockHash,
         noteCommitment,

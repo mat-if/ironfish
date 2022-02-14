@@ -109,7 +109,7 @@ export class BlockSerde implements Serde<Block, SerializedBlock> {
   blockHeaderSerde: BlockHeaderSerde
 
   constructor(readonly strategy: Strategy) {
-    this.blockHeaderSerde = new BlockHeaderSerde(strategy)
+    this.blockHeaderSerde = new BlockHeaderSerde()
   }
 
   equals(block1: Block, block2: Block): boolean {
@@ -122,11 +122,7 @@ export class BlockSerde implements Serde<Block, SerializedBlock> {
     }
 
     for (const [transaction1, transaction2] of zip(block1.transactions, block2.transactions)) {
-      if (
-        !transaction1 ||
-        !transaction2 ||
-        !this.strategy.transactionSerde.equals(transaction1, transaction2)
-      ) {
+      if (!transaction1 || !transaction2 || !transaction1.equals(transaction2)) {
         return false
       }
     }

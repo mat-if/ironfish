@@ -32,7 +32,7 @@ export class Strategy {
     this.nullifierHasher = new NullifierHasher()
     this.transactionSerde = new TransactionSerde(workerPool)
     this.blockSerde = new BlockSerde(this)
-    this.blockHeaderSerde = new BlockHeaderSerde(this)
+    this.blockHeaderSerde = new BlockHeaderSerde()
     this.noteSerde = this.noteHasher.elementSerde()
     this.miningRewardCachedByYear = new Map<number, number>()
     this.workerPool = workerPool

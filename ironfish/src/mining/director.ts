@@ -166,7 +166,7 @@ export class MiningDirector {
     this.force = options.force || false
     this._blockGraffiti = ''
     this._minerAccount = null
-    this.blockHeaderSerde = new BlockHeaderSerde(options.strategy)
+    this.blockHeaderSerde = new BlockHeaderSerde()
     this.miningDifficultyChangeTimeout = null
     this.miningRequestId = 0
     this.recentBlocks = new LeastRecentlyUsed(50)
