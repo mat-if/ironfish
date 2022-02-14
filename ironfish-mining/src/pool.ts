@@ -18,9 +18,16 @@ export class Pool {
     // baseTargetValue: number = 1
     target: Buffer = Buffer.alloc(32)
 
+    currentHeadTimestamp: number
+    currentHeadDifficulty: string
+
     // TODO: Disconnects
 
-    private constructor(sdk: IronfishSdk, nodeClient: IronfishRpcClient) {
+    private constructor(
+        sdk: IronfishSdk, 
+        nodeClient: IronfishRpcClient, 
+        { timestamp, difficulty }: {timestamp: number, difficulty: string}
+    ) {
         this.sdk = sdk
         this.nodeClient = nodeClient
         this.hashRate = new Meter()
@@ -28,6 +35,8 @@ export class Pool {
         this.nextMiningRequestId = 0
         this.miningRequestBlocks = {}
         this.target.writeUInt32BE(65535)
+        this.currentHeadTimestamp = timestamp
+        this.currentHeadDifficulty = difficulty
     }
 
     static async init(): Promise<Pool> {
@@ -41,9 +50,11 @@ export class Pool {
 
         const sdk = await IronfishSdk.init({ configOverrides: configOverrides })
         const nodeClient = await sdk.connectRpc()
+        const currentBlock = (await nodeClient.getBlockInfo({sequence: -1})).content.block
         return new Pool(
             sdk,
             nodeClient,
+            currentBlock
         )
     }
 
@@ -80,6 +91,8 @@ export class Pool {
             console.log("Valid pool share submitted")
         }
         if (hashedHeader < Buffer.from(blockTemplate.header.target, 'hex')) {
+            // TODO: this seems to (sometimes?) have significant delay, look into why.
+            // is it a socket buffer flush issue or a slowdown on the node side?
             console.log("Valid block, submitting to node")
             this.nodeClient.submitWork(blockTemplate)
         }
@@ -87,10 +100,15 @@ export class Pool {
 
     private async processNewBlocks() {
         for await (const payload of this.nodeClient.blockTemplateStream().contentStream()) {
+            // TODO: Should we just include this as part of the block template? Seems fairly reasonable
+            const currentBlock = (await this.nodeClient.getBlockInfo({hash: payload.header.previousBlockHash})).content.block
+            this.currentHeadDifficulty = currentBlock.difficulty
+            this.currentHeadTimestamp = currentBlock.timestamp
+
             let miningRequestId = this.nextMiningRequestId++
             this.miningRequestBlocks[miningRequestId] = payload
 
-            this.stratum.newWork(miningRequestId, payload)
+            this.stratum.newWork(miningRequestId, payload, this.currentHeadDifficulty, this.currentHeadTimestamp)
         }
     }
 }
@@ -237,7 +255,7 @@ function sleep(ms: number) {
 async function init() {
     console.log('pool init')
     let pool = await Pool.init()
-    pool.start()
+    // pool.start()
 }
 
 init()

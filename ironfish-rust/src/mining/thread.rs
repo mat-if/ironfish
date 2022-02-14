@@ -1,6 +1,7 @@
 use std::{
     sync::mpsc::{self, Receiver, SendError, Sender},
     thread,
+    time::Duration,
 };
 
 use super::mine::{self, BATCH_SIZE};
@@ -73,6 +74,7 @@ fn process_commands(
             match command {
                 Command::NewWork(mut header_bytes, target, mining_request_id) => {
                     let mut batch_start = start;
+                    thread::sleep(Duration::from_secs(13));
                     loop {
                         let match_found =
                             mine::mine_batch(&mut header_bytes, &target, batch_start, step_size);

@@ -36,8 +36,12 @@ export type SerializedBlockTemplate = {
     graffiti: string
   }
   transactions: string[]
+  previousBlockInfo: {
+    difficulty: string
+    timestamp: number
+  }
 }
-function serializeBlockTemplate(block: Block): SerializedBlockTemplate {
+function serializeBlockTemplate(block: Block, previousBlock: Block): SerializedBlockTemplate {
   const header = {
     sequence: block.header.sequence,
     previousBlockHash: block.header.previousBlockHash.toString('hex'),
@@ -55,11 +59,19 @@ function serializeBlockTemplate(block: Block): SerializedBlockTemplate {
     minersFee: BigIntUtils.toBytesBE(block.header.minersFee, 8).toString('hex'),
     graffiti: block.header.graffiti.toString('hex'),
   }
+  // TODO: Does this work for a genesis block? needs some form of optional data, or pre-filled in genesis case.
+  const previousBlockInfo = {
+    difficulty: BigIntUtils.toBytesBE(previousBlock.header.target.asBigInt(), 32).toString(
+      'hex',
+    ),
+    timestamp: previousBlock.header.timestamp.getTime(),
+  }
 
   const transactions = block.transactions.map((t) => t.serialize().toString('hex'))
   return {
     header,
     transactions,
+    previousBlockInfo,
   }
 }
 
@@ -213,7 +225,7 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
         GraffitiUtils.fromString(node.config.get('blockGraffiti')),
       )
 
-      const serializedBlock = serializeBlockTemplate(newBlock)
+      const serializedBlock = serializeBlockTemplate(newBlock, block)
       request.stream(serializedBlock)
     }
 
@@ -224,7 +236,7 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
     }
 
     // TODO: we'll still want equivalent of director.force flag
-    if (!node.chain.synced) {
+    if (!node.chain.synced && !node.config.get('miningForce')) {
       // TODO: Inform the requester with an error
       console.log('we arent synced')
       return

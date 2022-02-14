@@ -4,6 +4,8 @@
 import { Logger } from '../../logger'
 import { Response, ResponseEnded } from '../response'
 import {
+  AdjustTargetStreamRequest,
+  AdjustTargetStreamResponse,
   BlockTemplateStreamRequest,
   BlockTemplateStreamResponse,
   CreateAccountRequest,
@@ -239,12 +241,18 @@ export abstract class IronfishRpcClient {
     return this.request<void, BlockTemplateStreamResponse>('miner/blockTemplateStream', params)
   }
 
+  adjustTargetStream(
+    params: AdjustTargetStreamRequest = undefined,
+  ): Response<void, AdjustTargetStreamResponse> {
+    return this.request<void, AdjustTargetStreamResponse>('miner/adjustTargetStream', params)
+  }
+
   successfullyMined(params: SuccessfullyMinedRequest): Response<SuccessfullyMinedResponse> {
     return this.request<SuccessfullyMinedResponse>('miner/successfullyMined', params)
   }
 
-  submitWork(params: SubmitWorkRequest): Response<SubmitWorkRequest> {
-    return this.request<SubmitWorkRequest>('miner/submitWork', params)
+  submitWork(params: SubmitWorkRequest): Response<SubmitWorkResponse> {
+    return this.request<SubmitWorkResponse>('miner/submitWork', params)
   }
 
   async getFunds(params: GetFundsRequest): Promise<ResponseEnded<GetFundsResponse>> {

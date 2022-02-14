@@ -44,6 +44,12 @@ export const serializedBlockTemplateSchema2 = yup
       .required()
       .defined(),
     transactions: yup.array().of(yup.string().required()).required().defined(),
+    previousBlockInfo: yup
+      .object({
+        difficulty: yup.string(),
+        timestamp: yup.number(),
+      })
+      .optional(),
   })
   .required()
   .defined()
@@ -72,6 +78,8 @@ router.register<typeof SubmitWorkRequestSchema, SubmitWorkResponse>(
       return
     }
 
+    // TODO: following the pattern of mining director, we do a verifyBlock, then an chain.addBlock
+    // chain.addBlock later does a verifyBlockAdd, do a deeper pass on this for understanding.
     const validation = await node.chain.verifier.verifyBlock(block)
 
     if (!validation.valid) {
@@ -101,6 +109,7 @@ router.register<typeof SubmitWorkRequestSchema, SubmitWorkResponse>(
       `Successfully mined block ${blockDisplay} with ${block.transactions.length} transactions`,
     )
 
+    // TODO: Move this event out of mining director
     node.miningDirector.onNewBlock.emit(block)
     request.end()
   },
