@@ -1,0 +1,75 @@
+{
+  "Route miner/blockTemplateStream should exist": [
+    {
+      "name": "account",
+      "spendingKey": "dacb1de5efb7cec3e10b34fb9d6708629a2cb6dbbc8d66ff20889eb54604ece5",
+      "incomingViewKey": "6f6b2e1d21b8224f147c5548463356e55b4992615f5da748a9f85bdd95225a07",
+      "outgoingViewKey": "58f34e9f9fbb758c91e5006642359fd09eadad063fb4acb4c75751ef83f13320",
+      "publicAddress": "e12174c9da7cf0efdbda6067678130861b4fbe74441aa38f2ddb5730f4d28bbd486a39f4905eb3fe75f644",
+      "rescan": null,
+      "displayName": "account (a5aaa1a)"
+    },
+    {
+      "header": {
+        "sequence": 2,
+        "previousBlockHash": "8FB5B576EB519E03911C8768D7C8AC97252F7BE49FEC77279C43AF2DA9F82068",
+        "noteCommitment": {
+          "commitment": {
+            "type": "Buffer",
+            "data": "base64:M1JYKfImrPE7mt46J+4cREDswS0twTe5MWA4RNkisVs="
+          },
+          "size": 4
+        },
+        "nullifierCommitment": {
+          "commitment": "68412AF594D80DD8D651A57F4D8EBA7F37D88419AB0FF5F90E6517CEB0D6D3DB",
+          "size": 1
+        },
+        "target": "883423532389192164791648750371459257913741948437809479060803100646309888",
+        "randomness": 0,
+        "timestamp": 1644955598943,
+        "minersFee": "-2000000000",
+        "work": "0",
+        "hash": "785B7681C9EE47C7C71114FB7AA719B7196DBD2D4F8A33EAA6822585995A9473",
+        "graffiti": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "transactions": [
+        {
+          "type": "Buffer",
+          "data": "base64:AAAAAAAAAAABAAAAAAAAAABsyoj/////AAAAAIVEs5kyTJj2EBOMipFfrYGYdFrOw7pj5c/7rOFDeRn2dZdFBAUQeR82pSW/GUgzkIQtyB+JitadNVc5/dtZkbrslPD2TwPfcbpjXKsPh3ngBSpRCei1UJ/p32igUHq9aA5SZMhMIFBgvhaZhAlmY/i5EJ7kq7hGVCiZvR5yRc2d9HEaoRFlffs5WPWclY3WjLWgP1nS7xwVc+RCEVq4M7TiF3nXzAWGqPm5CYsaQYHu8Gq7bgAGXpL5QvGGYj6w0j0rwspYnXf+UO0k8jtZ/a0e0G4v43nr14mkoQrBWnSOH695kecL+H8wzWt1NhUj+1Kyws/nmCRo4ExdyCq9syF7zGGfigHQmMn0YK3FJcnWsqs8CSFGMszi7+fAL2GN1a+6sPhM4pG7o/6grziDWFyRrNj2hn73IVTAXNatep0MSzUo9ICiHQNtsW15Zfr8vNi+E/tpmlw4Lnbo658vRXGfHMOpHflEOY4J7DWHfF69SygwN4+Ut+cOxLTr3hg3pKPwPkJlYW5zdGFsayBub3RlIGVuY3J5cHRpb24gbWluZXIga2V5MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwg1iR1FTVEOU2kXTGM1TXckyEO5GtW0AYOt4JNHOTuGuroT8Cxk6VpEbm3kgeJSSJ8vdCi43S+C1sOzjK8M5JBQ=="
+        }
+      ]
+    }
+  ],
+  "Route miner/blockTemplateStream should return an error if there is no account": [
+    {
+      "header": {
+        "sequence": 2,
+        "previousBlockHash": "8FB5B576EB519E03911C8768D7C8AC97252F7BE49FEC77279C43AF2DA9F82068",
+        "noteCommitment": {
+          "commitment": {
+            "type": "Buffer",
+            "data": "base64:baBgKH0rnXUEND4o1WvThkKRxButD+YU+9V1IhMg1mM="
+          },
+          "size": 4
+        },
+        "nullifierCommitment": {
+          "commitment": "68412AF594D80DD8D651A57F4D8EBA7F37D88419AB0FF5F90E6517CEB0D6D3DB",
+          "size": 1
+        },
+        "target": "883423532389192164791648750371459257913741948437809479060803100646309888",
+        "randomness": 0,
+        "timestamp": 1644966558264,
+        "minersFee": "-2000000000",
+        "work": "0",
+        "hash": "8D5C73A40157E00D6126C7E88679A899425A73AD3604AD89F7669E3357EF43EC",
+        "graffiti": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "transactions": [
+        {
+          "type": "Buffer",
+          "data": "base64:AAAAAAAAAAABAAAAAAAAAABsyoj/////AAAAAIb5DEr5kmackKZkrXV9H+lE8Me6L757kdaJE6egbdm+TKZAhexbN8FGh/6ieQgxRak82BFPiWNw7nENH6iRGNBEGywNY4RZkVlpMvGAeQSaOMICAbCI8PHi6QOiiCUgwwo1ZAYDP0KkivqEvcr/ZNhBQVBST5v5pTer7xtS0/nbd6I28ulkQjYvPrNHIZHluoARz/jJJyZbrTFge4rcbPR5AfxWrFhNH8Wg8qvas8EWu2wy7SjNSyrmk+IOkFLuqnucuSi7cMZYi1fu7KQC2KqCmgGR6CLqLu0GSWtciXtLPKhl8q5pCxDkM6R6bVZcuJPBh3iHgKkgMRNm5mny6zrFV+jIGJjyTzVmiCITV34PWesFrDH5Y3huJXEVGFbDKnXHTNVqOJCgQxOEMMLneVKEMwV3EKEXQ/BwreFXcChmCnYecGsHplzSXhTRel2sC8SPNw49wsZ6RDdoQB15V2tsoJULhLFYoBVUhwuVZC2Vhefu+DG9uFb2PoGhIzQB9Au1jUJlYW5zdGFsayBub3RlIGVuY3J5cHRpb24gbWluZXIga2V5MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwiGW+K7GaP5bEt5PNrmkxCopg7XPu7H2eKPJ2UlJiwSKRbGmjksVMkVGMQeCxIhQzqCiuJYFzbiqi9EeXXpbSAw=="
+        }
+      ]
+    }
+  ]
+}
