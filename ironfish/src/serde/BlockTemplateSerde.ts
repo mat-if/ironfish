@@ -2,10 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { BigIntUtils, Block, BlockHeader, Strategy } from '..'
+import { Block } from '../primitives/block'
+import { BlockHeader } from '../primitives/blockheader'
 import { NoteEncryptedHashSerde } from '../primitives/noteEncrypted'
 import { Target } from '../primitives/target'
-import { NullifierSerdeInstance } from '.'
+import { Strategy } from '../strategy'
+import { BigIntUtils } from '../utils'
+import { NullifierSerdeInstance } from './serdeInstances'
 
 export type SerializedBlockTemplate = {
   header: {
@@ -27,7 +30,7 @@ export type SerializedBlockTemplate = {
   }
   transactions: string[]
   previousBlockInfo: {
-    difficulty: string
+    target: string
     timestamp: number
   }
 }
@@ -53,9 +56,7 @@ export class BlockTemplateSerde {
     }
     // TODO: Does this work for a genesis block? needs some form of optional data, or pre-filled in genesis case.
     const previousBlockInfo = {
-      difficulty: BigIntUtils.toBytesBE(previousBlock.header.target.asBigInt(), 32).toString(
-        'hex',
-      ),
+      target: BigIntUtils.toBytesBE(previousBlock.header.target.asBigInt(), 32).toString('hex'),
       timestamp: previousBlock.header.timestamp.getTime(),
     }
 

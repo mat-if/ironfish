@@ -4,13 +4,13 @@
 
 import { BufferMap, BufferSet } from 'buffer-map'
 import FastPriorityQueue from 'fastpriorityqueue'
-import { AsyncUtils } from '..'
 import { Assert } from '../assert'
 import { Blockchain } from '../blockchain'
 import { createRootLogger, Logger } from '../logger'
 import { Block, BlockHeader } from '../primitives'
 import { Transaction, TransactionHash } from '../primitives/transaction'
 import { Strategy } from '../strategy'
+import { AsyncUtils } from '../utils'
 
 const MAX_TRANSACTIONS_PER_BLOCK = 10
 

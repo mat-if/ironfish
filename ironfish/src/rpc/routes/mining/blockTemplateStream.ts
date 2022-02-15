@@ -2,15 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 import * as yup from 'yup'
-import {
-  Assert,
-  Block,
-  BlockTemplateSerde,
-  GraffitiUtils,
-  SerializedBlockTemplate,
-} from '../../..'
-import { ValidationError } from '../..'
-import { ApiNamespace, router } from '..'
+import { Assert } from '../../../assert'
+import { Block } from '../../../primitives/block'
+import { BlockTemplateSerde, SerializedBlockTemplate } from '../../../serde/BlockTemplateSerde'
+import { GraffitiUtils } from '../../../utils'
+import { ValidationError } from '../../adapters'
+import { ApiNamespace, router } from '../router'
 
 export type BlockTemplateStreamRequest = Record<string, never> | undefined
 export type BlockTemplateStreamResponse = SerializedBlockTemplate
@@ -52,7 +49,7 @@ export const BlockTemplateStreamResponseSchema: yup.ObjectSchema<BlockTemplateSt
       transactions: yup.array().of(yup.string().required()).required().defined(),
       previousBlockInfo: yup
         .object({
-          difficulty: yup.string().required(),
+          target: yup.string().required(),
           timestamp: yup.number().required(),
         })
         .required()
@@ -74,7 +71,7 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
       )
 
       const account = node.accounts.getDefaultAccount()
-      Assert.isNotNull(account)
+      Assert.isNotNull(account, 'Cannot mine without an account')
 
       // Calculate the final fee for the miner of this block
       const minersFee = await node.strategy.createMinersFee(
