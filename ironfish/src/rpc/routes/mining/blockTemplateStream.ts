@@ -65,6 +65,7 @@ router.register<typeof BlockTemplateStreamRequestSchema, BlockTemplateStreamResp
     // Construct a new block template and send it to the stream listener
     const onConnectBlock = async (block: Block) => {
       const newBlockSequence = block.header.sequence + 1
+      console.log('given', block.header.sequence)
 
       const { totalFees, blockTransactions } = await node.memPool.getNewBlockTransactions(
         newBlockSequence,
