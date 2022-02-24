@@ -36,6 +36,7 @@ export type FLAGS =
   | typeof VerboseFlagKey
 
 export abstract class IronfishCommand extends Command {
+  static enableJsonFlag = false
   // Yes, this is disabling the type system but any code
   // that may use this will not be executed until after
   // run() is called and it provides a lot of value
@@ -57,11 +58,14 @@ export abstract class IronfishCommand extends Command {
     this.logger = createRootLogger().withTag(this.ctor.id)
   }
 
-  abstract start(): Promise<void> | void
+  abstract start(): Promise<void> | void | Promise<Map<string, string>>
 
-  async run(): Promise<void> {
+  async run(): Promise<void | Map<string, string> | unknown> {
     try {
-      await this.start()
+      const output = await this.start()
+      if (output) {
+        return Object.fromEntries(output)
+      }
     } catch (error: unknown) {
       if (hasUserResponseError(error)) {
         this.log(error.codeMessage)
@@ -71,7 +75,6 @@ export abstract class IronfishCommand extends Command {
         throw error
       }
     }
-
     this.exit(0)
   }
 

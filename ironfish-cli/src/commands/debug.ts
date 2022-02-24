@@ -10,6 +10,7 @@ import { LocalFlags } from '../flags'
 const SPACE_BUFFER = 8
 
 export default class Debug extends IronfishCommand {
+  static enableJsonFlag = true
   static description = 'Show debug information to help locate issues'
   static hidden = true
 
@@ -17,7 +18,7 @@ export default class Debug extends IronfishCommand {
     ...LocalFlags,
   }
 
-  async start(): Promise<void> {
+  async start(): Promise<Map<string, string>> {
     const node = await this.sdk.node({ autoSeed: false })
 
     let dbOpen = true
@@ -37,6 +38,7 @@ export default class Debug extends IronfishCommand {
     }
 
     this.display(output)
+    return output
   }
 
   baseOutput(node: IronfishNode): Map<string, string> {
