@@ -59,8 +59,7 @@ impl ReceiptParams {
         // };
         let value_commitment = note
             .asset_type
-            // .value_commitment(note.value, value_commitment_randomness);
-            .value_commitment(note.value, note.randomness);
+            .value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(spender_key, note, &value_commitment, &diffie_hellman_keys);

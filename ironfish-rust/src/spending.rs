@@ -426,9 +426,10 @@ mod test {
     use super::{SpendParams, SpendProof};
     use crate::{
         keys::SaplingKey,
-        merkle_note::{position as witness_position, sapling_auth_path},
+        merkle_note::{position as witness_position, sapling_auth_path, sapling_auth_path2},
         note::{Memo, Note},
         sapling_bls12,
+        serializing::scalar_to_bytes,
         test_util::make_fake_witness,
         witness::{WitnessNode, WitnessTrait},
     };
@@ -443,7 +444,10 @@ mod test {
         primitives::{ProofGenerationKey, Rseed},
         sapling::Node,
     };
-    use masp_proofs::{circuit::sapling::Spend, sapling::SaplingProvingContext};
+    use masp_proofs::{
+        circuit::sapling::{Spend, TREE_DEPTH},
+        sapling::SaplingProvingContext,
+    };
     use rand::{prelude::*, rngs::OsRng};
     use rand::{thread_rng, Rng};
     use zcash_primitives::sapling::redjubjub;
@@ -554,7 +558,7 @@ mod test {
                 payment_address: None,
                 commitment_randomness: None,
                 ar: None,
-                auth_path: vec![None; 32],
+                auth_path: vec![None; TREE_DEPTH],
                 anchor: None,
             },
             &mut OsRng,
@@ -576,10 +580,11 @@ mod test {
         let asset_type = AssetType::new("foo".as_bytes()).unwrap();
         let note = Note::new(public_address.clone(), value, Memo([0; 32]), asset_type);
 
-        let proof_generation_key = ProofGenerationKey {
-            ak: key.authorizing_key,
-            nsk: key.proof_authorizing_key,
-        };
+        let proof_generation_key = key.sapling_proof_generation_key();
+        // let proof_generation_key = ProofGenerationKey {
+        //     ak: key.authorizing_key,
+        //     nsk: key.proof_authorizing_key,
+        // };
         let diversifier = public_address.diversifier;
 
         let rseed = Rseed::BeforeZip212(note.randomness);
@@ -591,18 +596,23 @@ mod test {
         let witness = make_fake_witness(&note);
         let anchor = witness.root_hash();
 
-        let our_merkle_path = sapling_auth_path(&witness);
-        let merkle_path = MerklePath::from_path(
-            witness
-                .auth_path
-                .iter()
-                .map(|witness_node| match witness_node {
-                    WitnessNode::Left(scalar) => (Node::new(scalar.to_bytes()), false),
-                    WitnessNode::Right(scalar) => (Node::new(scalar.to_bytes()), true),
-                })
-                .collect(),
-            witness_position(&witness),
-        );
+        // let our_merkle_path = sapling_auth_path(&witness);
+        let mp2 = sapling_auth_path2(&witness);
+        let merkle_path = MerklePath::from_path(mp2, witness_position(&witness));
+
+        // let merkle_path = MerklePath::from_path(
+        //     witness
+        //         .get_auth_path()
+        //         .iter()
+        //         .map(|witness_node| match witness_node {
+        //             // WitnessNode::Left(scalar) => (Node::new(scalar.to_bytes()), false),
+        //             // WitnessNode::Right(scalar) => (Node::new(scalar.to_bytes()), true),
+        //             WitnessNode::Left(scalar) => (Node::new(scalar_to_bytes(scalar)), false),
+        //             WitnessNode::Right(scalar) => (Node::new(scalar_to_bytes(scalar)), true),
+        //         })
+        //         .collect(),
+        //     witness_position(&witness),
+        // );
 
         // pub struct MerklePath<Node: Hashable> {
         //     pub auth_path: Vec<(Node, bool)>,

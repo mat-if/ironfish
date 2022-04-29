@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::serializing::scalar_to_bytes;
+
 /// Implement a merkle note to store all the values that need to go into a merkle tree.
 /// A tree containing these values can serve as a snapshot of the entire chain.
 use super::{
@@ -18,7 +20,7 @@ use bls12_381::Scalar;
 use ff::PrimeField;
 use group::GroupEncoding;
 use jubjub::{ExtendedPoint, SubgroupPoint};
-use masp_primitives::{asset_type::AssetType, primitives::ValueCommitment};
+use masp_primitives::{asset_type::AssetType, primitives::ValueCommitment, sapling::Node};
 // use zcash_primitives::primitives::ValueCommitment;
 
 use std::{convert::TryInto, io};
@@ -221,6 +223,22 @@ pub(crate) fn sapling_auth_path(witness: &dyn WitnessTrait) -> Vec<Option<(Scala
     auth_path
 }
 
+pub(crate) fn sapling_auth_path2(witness: &dyn WitnessTrait) -> Vec<(Node, bool)> {
+    let mut auth_path = vec![];
+    for element in &witness.get_auth_path() {
+        let sapling_element = match element {
+            WitnessNode::Left(ref sibling_hash) => {
+                (Node::new(scalar_to_bytes(sibling_hash)), false)
+            }
+            WitnessNode::Right(ref sibling_hash) => {
+                (Node::new(scalar_to_bytes(sibling_hash)), true)
+            }
+        };
+        auth_path.push(sapling_element);
+    }
+    auth_path
+}
+
 /// Calculate the position of a leaf node from it's witness, assuming the
 /// auth path is from a fixed-sized complete merkle tree.
 ///
@@ -313,8 +331,7 @@ mod test {
         // };
         let value_commitment = note
             .asset_type
-            // .value_commitment(note.value, value_commitment_randomness);
-            .value_commitment(note.value, note.randomness);
+            .value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);
@@ -351,7 +368,7 @@ mod test {
         // };
         let value_commitment = note
             .asset_type
-            .value_commitment(note.value, note.randomness);
+            .value_commitment(note.value, value_commitment_randomness);
 
         let mut merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);
