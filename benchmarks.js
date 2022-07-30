@@ -11,8 +11,8 @@ const {
   Note,
   NativeWorkerPool,
   Transaction,
-  rustBoxMessage,
-  rustUnboxMessage,
+  boxMessage: rustBoxMessage,
+  unboxMessage: rustUnboxMessage,
 } = require("./ironfish-rust-nodejs");
 const tweetnacl = require("./node_modules/tweetnacl");
 
@@ -144,11 +144,15 @@ async function testBoxUnbox() {
 
     // RUST FN CALL
     start = process.hrtime.bigint();
-    let y = rustBoxMessage(msg, privateIdentity.secretKey, recipient);
+    let y = rustBoxMessage(
+      msg,
+      privateIdentity.secretKey,
+      recipient.toString("base64")
+    );
     let y1 = rustUnboxMessage(
       y.boxedMessage,
       y.nonce,
-      recipient,
+      recipient.toString("base64"),
       privateIdentity.secretKey
     );
     end = process.hrtime.bigint();

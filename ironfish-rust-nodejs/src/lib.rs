@@ -2,12 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crypto_box::aead::generic_array::GenericArray;
-use crypto_box::aead::Aead;
-use crypto_box::PublicKey;
-use crypto_box::SecretKey;
+use ironfish_rust::base64;
 use ironfish_rust::note::Memo;
 use ironfish_rust::sapling_bls12::SAPLING;
+use ironfish_rust::tweetnacl::box_message;
+use ironfish_rust::tweetnacl::unbox_message;
 use ironfish_rust::Note;
 use ironfish_rust::ProposedTransaction;
 use ironfish_rust::SaplingKey;
@@ -211,55 +210,58 @@ pub struct BoxedMessage {
     pub boxed_message: String,
 }
 
-#[napi]
-pub fn rust_box_message(
-    plain_text_message: String,
-    sender_private_key: Uint8Array,
-    recipient_public_key: Uint8Array,
-) -> BoxedMessage {
-    let mut rng = crypto_box::rand_core::OsRng;
+#[napi(js_name = "boxMessage")]
+pub fn native_box_message(
+    plaintext: String,
+    sender_secret_key: Uint8Array,
+    recipient_public_key: String,
+) -> Result<BoxedMessage> {
+    let sender: [u8; 32] = sender_secret_key
+        .to_vec()
+        .try_into()
+        .map_err(|_| Error::from_reason("Unable to convert sender secret key".to_owned()))?;
 
-    let sender_key: [u8; 32] = sender_private_key.to_vec().try_into().unwrap();
-    let recipient_key: [u8; 32] = recipient_public_key.to_vec().try_into().unwrap();
+    let decoded_recipient = base64::decode(recipient_public_key)
+        .map_err(|_| Error::from_reason("Unable to decode recipient public key".to_owned()))?;
 
-    let sender: SecretKey = SecretKey::from(sender_key);
-    let recipient: PublicKey = PublicKey::from(recipient_key);
+    let recipient: [u8; 32] = decoded_recipient
+        .try_into()
+        .map_err(|_| Error::from_reason("Unable to convert recipient public key".to_owned()))?;
 
-    let nonce = crypto_box::generate_nonce(&mut rng);
+    let (nonce, ciphertext) = box_message(plaintext, sender, recipient)
+        .map_err(|_| Error::from_reason("Unable to box message".to_owned()))?;
 
-    let c_box = crypto_box::Box::new(&recipient, &sender);
-
-    let ciphertext = c_box
-        .encrypt(&nonce, plain_text_message.as_bytes())
-        .unwrap();
-
-    BoxedMessage {
-        nonce: base64::encode(&nonce),
-        boxed_message: base64::encode(&ciphertext),
-    }
+    Ok(BoxedMessage {
+        nonce: base64::encode(nonce),
+        boxed_message: base64::encode(ciphertext),
+    })
 }
 
-#[napi]
-pub fn rust_unbox_message(
+#[napi(js_name = "unboxMessage")]
+pub fn native_unbox_message(
     boxed_message: String,
     nonce: String,
-    sender_public_key: Uint8Array,
-    recipient_private_key: Uint8Array,
-) -> String {
-    let nonce = base64::decode(nonce).unwrap();
-    let nonce = GenericArray::from_slice(&nonce);
+    sender_public_key: String,
+    recipient_secret_key: Uint8Array,
+) -> Result<String> {
+    let decoded_sender = base64::decode(sender_public_key)
+        .map_err(|_| Error::from_reason("Unable to decode sender public key".to_owned()))?;
 
-    let boxed_message = base64::decode(boxed_message).unwrap();
+    let sender: [u8; 32] = decoded_sender
+        .try_into()
+        .map_err(|_| Error::from_reason("Unable to convert sender pubic key".to_owned()))?;
 
-    let sender_key: [u8; 32] = sender_public_key.to_vec().try_into().unwrap();
-    let recipient_key: [u8; 32] = recipient_private_key.to_vec().try_into().unwrap();
+    let recipient: [u8; 32] = recipient_secret_key
+        .to_vec()
+        .try_into()
+        .map_err(|_| Error::from_reason("Unable to convert recipient secret key".to_owned()))?;
 
-    let recipient: SecretKey = SecretKey::from(recipient_key);
-    let sender: PublicKey = PublicKey::from(sender_key);
+    let decoded_nonce = base64::decode(nonce)
+        .map_err(|_| Error::from_reason("Unable to decode nonce".to_owned()))?;
 
-    let c_box = crypto_box::Box::new(&sender, &recipient);
+    let decoded_ciphertext = base64::decode(boxed_message)
+        .map_err(|_| Error::from_reason("Unable to decode boxed_message".to_owned()))?;
 
-    let cleartext = c_box.decrypt(nonce, &boxed_message[..]).unwrap();
-
-    return String::from_utf8(cleartext).unwrap();
+    unbox_message(&decoded_ciphertext, &decoded_nonce, sender, recipient)
+        .map_err(|e| Error::from_reason(format!("Unable to unbox message: {}", e)))
 }

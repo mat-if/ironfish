@@ -712,8 +712,6 @@ dependencies = [
 name = "ironfish-rust-nodejs"
 version = "0.1.0"
 dependencies = [
- "base64 0.13.0",
- "crypto_box",
  "ironfish_rust",
  "napi",
  "napi-build",
@@ -725,12 +723,14 @@ dependencies = [
 name = "ironfish_rust"
 version = "0.1.0"
 dependencies = [
+ "base64 0.13.0",
  "bellman",
  "blake2b_simd",
  "blake2s_simd",
  "blake3",
  "bls12_381",
  "byteorder",
+ "crypto_box",
  "ff",
  "group",
  "jubjub",

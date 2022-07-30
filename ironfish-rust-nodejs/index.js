@@ -236,7 +236,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { NoteEncrypted, Note, TransactionPosted, Transaction, generateKey, generateNewPublicAddress, initializeSapling, FoundBlockResult, ThreadPoolHandler, NativeWorkerPool, rustBoxMessage, rustUnboxMessage } = nativeBinding
+const { NoteEncrypted, Note, TransactionPosted, Transaction, generateKey, generateNewPublicAddress, initializeSapling, FoundBlockResult, ThreadPoolHandler, NativeWorkerPool, boxMessage, unboxMessage } = nativeBinding
 
 module.exports.NoteEncrypted = NoteEncrypted
 module.exports.Note = Note
@@ -248,5 +248,5 @@ module.exports.initializeSapling = initializeSapling
 module.exports.FoundBlockResult = FoundBlockResult
 module.exports.ThreadPoolHandler = ThreadPoolHandler
 module.exports.NativeWorkerPool = NativeWorkerPool
-module.exports.rustBoxMessage = rustBoxMessage
-module.exports.rustUnboxMessage = rustUnboxMessage
+module.exports.boxMessage = boxMessage
+module.exports.unboxMessage = unboxMessage

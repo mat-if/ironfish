@@ -32,6 +32,10 @@ pub use {
 };
 pub mod sapling_bls12;
 
+// Re-export base64
+pub use base64;
+pub mod tweetnacl;
+
 #[cfg(test)]
 pub(crate) mod test_util; // I'm not sure if this is the right way to publish the utility library.
 
