@@ -31,6 +31,8 @@ rust-crypto-wasm = "0.3.1" # in favor of rust-crypto as this one is wasm friendl
 tiny-bip39 = "0.8"
 zcash_primitives = "0.7.0"
 zcash_proofs = "0.7.1"
+cuckoofilter = "0.5.0"
+murmur3 = "0.5.1"
 
 # Note: Any changes here must also exist in ../ironfish-rust-nodejs/Cargo.toml
 [patch.crates-io]

@@ -2,10 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use ironfish_rust::sapling_bls12::SAPLING;
+use ironfish_rust::transaction::RustFoo;
 use ironfish_rust::PublicAddress;
 use ironfish_rust::SaplingKey;
 use napi::bindgen_prelude::*;
 use napi::Error;
+use napi::JsBuffer;
 use napi_derive::napi;
 
 use ironfish_rust::mining;
@@ -118,4 +121,22 @@ impl ThreadPoolHandler {
 #[napi]
 fn is_valid_public_address(hex_address: String) -> bool {
     PublicAddress::from_hex(&hex_address).is_ok()
+}
+
+#[napi]
+pub struct NativeWrapped {
+    inner: RustFoo,
+}
+
+#[napi]
+impl NativeWrapped {
+    #[napi(constructor)]
+    pub fn new(b: JsBuffer) -> Result<NativeWrapped> {
+        // let mut cursor = std::io::Cursor::new(&b);
+
+        let v = b.into_value().unwrap();
+        let inner = RustFoo::new(SAPLING.clone(), v.as_ref());
+
+        Ok(NativeWrapped { inner })
+    }
 }

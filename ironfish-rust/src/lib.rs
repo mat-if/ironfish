@@ -29,7 +29,7 @@ pub use {
     note::Note,
     receiving::{ReceiptParams, ReceiptProof},
     spending::{SpendParams, SpendProof},
-    transaction::{ProposedTransaction, Transaction},
+    transaction::{ProposedTransaction, RustFoo, Transaction},
 };
 
 #[cfg(test)]
@@ -80,5 +80,55 @@ impl Sapling {
     /// NOTE: If this is stupidly slow for you, try compiling in --release mode
     fn load_params(bytes: &[u8]) -> groth16::Parameters<Bls12> {
         groth16::Parameters::read(bytes, false).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::{collections::hash_map::DefaultHasher, time::Instant};
+
+    use crypto_box::rand_core::OsRng;
+    use cuckoofilter::CuckooFilter;
+    use rand::RngCore;
+
+    #[test]
+    fn test_cuckoo() {
+        let capacity = 5_000_000;
+
+        let iterations = 5_000_000;
+
+        let mut false_positive = 0;
+        let mut false_negative = 0;
+
+        let mut cf = CuckooFilter::<DefaultHasher>::with_capacity(capacity);
+
+        let mut hash = [0u8; 32];
+
+        let start = Instant::now();
+
+        for i in 0..iterations {
+            if i % (iterations / 10) == 0 {
+                println!("Execution #: {}", i);
+            }
+            OsRng.fill_bytes(&mut hash);
+
+            if cf.contains(&hash) {
+                false_positive += 1;
+            }
+
+            let _ = cf.add(&hash);
+
+            if !cf.contains(&hash) {
+                false_negative += 1;
+            }
+        }
+
+        let duration = start.elapsed().as_millis();
+
+        let fp_percent = (false_positive as f32 / iterations as f32) * 100.0;
+        println!("Mem used: {}", cf.memory_usage());
+        println!("Time took: {}", duration);
+        println!("False positives: {}: {}%", false_positive, fp_percent);
+        println!("False negatives: {}", false_negative);
     }
 }

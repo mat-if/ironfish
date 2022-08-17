@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::sapling_bls12::SAPLING;
+
 use super::{
     errors::{SaplingProofError, TransactionError},
     keys::{PublicAddress, SaplingKey},
@@ -222,7 +224,6 @@ impl ProposedTransaction {
             receipt_proofs.push(receipt.post()?);
         }
         Ok(Transaction {
-            sapling: self.sapling.clone(),
             expiration_sequence: self.expiration_sequence,
             transaction_fee: self.transaction_fee,
             spends: spend_proofs,
@@ -340,9 +341,6 @@ impl ProposedTransaction {
 /// This is the serializable form of a transaction.
 #[derive(Clone)]
 pub struct Transaction {
-    /// reference to the sapling object associated with this transaction
-    sapling: Arc<Sapling>,
-
     /// The balance of total spends - outputs, which is the amount that the miner gets to keep
     transaction_fee: i64,
 
@@ -362,14 +360,25 @@ pub struct Transaction {
     expiration_sequence: u32,
 }
 
+pub struct RustFoo {
+    s: Arc<Sapling>,
+    x: Vec<u8>,
+}
+
+impl RustFoo {
+    pub fn new(s: Arc<Sapling>, mut x: impl io::Read) -> Self {
+        let mut buf: Vec<u8> = vec![];
+        x.read_exact(&mut buf).unwrap();
+
+        Self { s, x: buf }
+    }
+}
+
 impl Transaction {
     /// Load a Transaction from a Read implementation (e.g: socket, file)
     /// This is the main entry-point when reconstructing a serialized transaction
     /// for verifying.
-    pub fn read<R: io::Read>(
-        sapling: Arc<Sapling>,
-        mut reader: R,
-    ) -> Result<Self, TransactionError> {
+    pub fn read<R: io::Read>(mut reader: R) -> Result<Self, TransactionError> {
         let num_spends = reader.read_u64::<LittleEndian>()?;
         let num_receipts = reader.read_u64::<LittleEndian>()?;
         let transaction_fee = reader.read_i64::<LittleEndian>()?;
@@ -385,7 +394,6 @@ impl Transaction {
         let binding_signature = Signature::read(&mut reader)?;
 
         Ok(Transaction {
-            sapling,
             transaction_fee,
             spends,
             receipts,
@@ -420,7 +428,7 @@ impl Transaction {
     ///     containing those proofs (and only those proofs)
     ///
     pub fn verify(&self) -> Result<(), TransactionError> {
-        batch_verify_transactions(self.sapling.clone(), iter::once(self))
+        batch_verify_transactions(iter::once(self))
     }
 
     /// Get an iterator over the spends in this transaction. Each spend
@@ -541,7 +549,6 @@ fn value_balance_to_point(value: i64) -> Result<ExtendedPoint, TransactionError>
 }
 
 pub fn batch_verify_transactions<'a>(
-    sapling: Arc<Sapling>,
     transactions: impl IntoIterator<Item = &'a Transaction>,
 ) -> Result<(), TransactionError> {
     let mut spend_verifier = Verifier::<Bls12>::new();
@@ -578,14 +585,14 @@ pub fn batch_verify_transactions<'a>(
     }
 
     if spend_verifier
-        .verify(&mut OsRng, &sapling.spend_params.vk)
+        .verify(&mut OsRng, &SAPLING.clone().spend_params.vk)
         .is_err()
     {
         return Err(SaplingProofError::VerificationFailed.into());
     }
 
     if receipt_verifier
-        .verify(&mut OsRng, &sapling.receipt_params.vk)
+        .verify(&mut OsRng, &SAPLING.clone().receipt_params.vk)
         .is_err()
     {
         return Err(SaplingProofError::VerificationFailed.into());
